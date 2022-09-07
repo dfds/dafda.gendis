@@ -37,3 +37,6 @@ unittests:
 		--collect "XPlat Code Coverage" \
 		--nologo \
 		-v q
+
+dev:
+	cd src && dotnet watch --no-hot-reload --project $(APP_PROJECT) run

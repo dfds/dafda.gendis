@@ -1,0 +1,55 @@
+version: "3.4"
+
+services:
+  database:
+    image: postgres:12
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=p
+
+  db-migration:
+    build: ./db
+    depends_on:
+      - database
+    environment:
+      - LOCAL_DEVELOPMENT=1 # will try to CREATE DATABASE ${PGDATABASE}
+      - PGDATABASE=dafdagendis # database name
+      - PGHOST=database # same as above - docker-compose service name
+      - PGPORT=5432 # same as above
+      - PGUSER=postgres # same as above
+      - PGPASSWORD=p # same as above
+      - PGSSLMODE=disable # ignore SSLMODE for local development (overwritten - see ./db/Dockerfile)
+
+  # zookeeper:
+  #   image: confluentinc/cp-zookeeper:7.0.0
+  #   environment:
+  #     ZOOKEEPER_CLIENT_PORT: 2181
+  #     ZOOKEEPER_TICK_TIME: 2000
+
+  # kafka:
+  #   image: confluentinc/cp-kafka:7.0.0
+  #   depends_on:
+  #     - zookeeper
+  #   ports:
+  #     - 9092:9092
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  # kafka-setup:
+  #   image: confluentinc/cp-kafka:7.0.0
+  #   depends_on:
+  #     - kafka
+  #   command: "bash -c 'echo Waiting for Kafka to be ready... && \
+  #                     sleep 5 && \
+  #                     cub kafka-ready -b kafka:29092 1 20 && \
+  #                     kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic hello'"
+  #   environment:
+  #     KAFKA_BROKER_ID: ignored
+  #     KAFKA_ZOOKEEPER_CONNECT: ignored
