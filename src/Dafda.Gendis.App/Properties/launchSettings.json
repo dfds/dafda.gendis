@@ -5,7 +5,10 @@
       "commandName": "Project",
       "applicationUrl": "http://localhost:5225",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DB_CONNECTION_STRING": "User ID=postgres;Password=p;Host=localhost;Port=5432;Database=dafdagendis;",
+        "GENDIS_PREFIX": "DEFAULT_KAFKA_",
+        "DEFAULT_KAFKA_BOOTSTRAP_SERVERS": "localhost:9092"
       }
     }
   }

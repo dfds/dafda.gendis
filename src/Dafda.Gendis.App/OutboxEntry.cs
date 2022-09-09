@@ -2,7 +2,7 @@
 
 public class OutboxEntry
 {
-    public string Id { get; set; } = null!;
+    public Guid Id { get; set; }
     public string Topic { get; set; } = null!;
     public string Key { get; set; } = null!;
     public string Payload { get; set; } = null!;
