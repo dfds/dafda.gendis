@@ -1,42 +1,55 @@
-﻿using Dapper;
+﻿using System.Diagnostics;
+using Dapper;
 
 namespace Dafda.Gendis.App;
 
 public class QueueProcessor
 {
     private readonly ILogger<QueueProcessor> _logger;
-    private readonly DbConnectionFactory _connectionFactory;
+    private readonly IDbConnectionProvider _connectionProvider;
     private readonly IProducer _producer;
+    private readonly SystemTime _systemTime;
 
-    public QueueProcessor(ILogger<QueueProcessor> logger, DbConnectionFactory connectionFactory, IProducer producer)
+    public QueueProcessor(ILogger<QueueProcessor> logger, IDbConnectionProvider connectionProvider, IProducer producer, SystemTime systemTime)
     {
         _logger = logger;
-        _connectionFactory = connectionFactory;
+        _connectionProvider = connectionProvider;
         _producer = producer;
+        _systemTime = systemTime;
     }
 
-    public void ProcessQueue(CancellationToken cancellationToken)
+    public async Task ProcessQueue(CancellationToken cancellationToken)
     {
-        using var conn = _connectionFactory.CreateOpenConnection();
+        var conn = _connectionProvider.Get();
+        var entries = (await conn.QueryAsync<OutboxEntry>("select * from \"_outbox\" where \"ProcessedUtc\" is null order by \"OccurredUtc\"")).ToArray();
 
-        var entries = conn
-            .Query<OutboxEntry>("select * from \"_outbox\" where \"ProcessedUtc\" is null order by \"OccurredUtc\"")
-            .ToArray();
+        if (entries.Length == 0)
+        {
+            return;
+        }
 
-        _logger.LogDebug($"items to process: {entries.Length}");
-        Console.WriteLine("lala");
+        using var _ =_logger.BeginScope("Batch id: {QueueBatchId}, Batch size: {QueueBatchSize}", Guid.NewGuid().ToString("N"), entries.Length);
 
         foreach (var entry in entries)
         {
             if (cancellationToken.IsCancellationRequested)
             {
+                _logger.LogWarning("Aborting processing batch - cancellation has been requested!");
                 break;
             }
 
-            // send message to kafka
+            var stopwatch = Stopwatch.StartNew();
 
-            conn.Execute($"update \"_outbox\" set \"ProcessedUtc\" = '{DateTime.UtcNow}' where \"Id\" = '{entry.Id}'");
-            _logger.LogDebug($"processed: #{entry.Id} - with payload: {entry.Payload}");
+            await _producer.Produce(
+                topic: entry.Topic,
+                partitionKey: entry.Key,
+                outboxItemId: entry.Id.ToString("N"),
+                message: entry.Payload
+            );
+
+            await conn.ExecuteAsync($"update \"_outbox\" set \"ProcessedUtc\" = '{_systemTime.UtcNow}' where \"Id\" = '{entry.Id}'");
+
+            _logger.LogDebug("Processed outbox item #{OutboxItemId} in [{ElapsedTime}]", entry.Id.ToString("N"), stopwatch.Elapsed);
         }
     }
 }

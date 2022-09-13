@@ -19,7 +19,7 @@ public static class Serilog
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft.Extensions.Diagnostics.HealthChecks", LogEventLevel.Warning)
-                .MinimumLevel.Override("Dafda", LogEventLevel.Warning);
+                ;
 
             configuration.WriteTo.Console(theme: AnsiConsoleTheme.Code);
 

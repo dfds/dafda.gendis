@@ -2,5 +2,5 @@
 
 public interface IProducer
 {
-    void Produce(string topic, string partitionKey, string message);
+    Task Produce(string topic, string partitionKey, string outboxItemId, string message);
 }
