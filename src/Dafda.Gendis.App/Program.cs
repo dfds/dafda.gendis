@@ -1,5 +1,6 @@
 using Dafda.Gendis.App;
 using Dafda.Gendis.App.Configuration;
+using Prometheus;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 
@@ -29,4 +30,11 @@ builder.Services.AddHostedService<OutboxChangeListener>();
 builder.Services.AddHostedService<MessageDispatcher>();
 
 var app = builder.Build();
+
+app.UseRouting();
+app.UseEndpoints(x =>
+{
+    x.MapMetrics();
+});
+
 app.Run();

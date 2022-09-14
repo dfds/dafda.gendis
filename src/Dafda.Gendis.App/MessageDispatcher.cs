@@ -2,10 +2,12 @@
 
 public class MessageDispatcher : BackgroundService
 {
+    private readonly ILogger<MessageDispatcher> _logger;
     private readonly IServiceProvider _serviceProvider;
 
-    public MessageDispatcher(IServiceProvider serviceProvider)
+    public MessageDispatcher(ILogger<MessageDispatcher> logger, IServiceProvider serviceProvider)
     {
+        _logger = logger;
         _serviceProvider = serviceProvider;
     }
 
@@ -18,8 +20,17 @@ public class MessageDispatcher : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var processor = scope.ServiceProvider.GetRequiredService<QueueProcessor>();
                 var resetEvent = scope.ServiceProvider.GetRequiredService<AutoResetEvent>();
-                
-                await processor.ProcessQueue(stoppingToken);
+
+                using var _ = _logger.BeginScope("Batch id: {QueueBatchId}", Guid.NewGuid().ToString("N"));
+
+                try
+                {
+                    await processor.ProcessQueue(stoppingToken);
+                }
+                catch (Exception err)
+                {
+                    _logger.LogError(err, "Fatal error while processing outbox!");
+                }
 
                 resetEvent.WaitOne(TimeSpan.FromSeconds(10));
             }
