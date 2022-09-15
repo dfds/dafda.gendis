@@ -42,8 +42,6 @@ public static class Kafka
             configs["max.in.flight.requests.per.connection"] = "1";
         }
 
-        Console.WriteLine("config: " + JsonSerializer.Serialize(configs, new JsonSerializerOptions{WriteIndented = true}));
-
         builder.Services.AddTransient<IProducer<string, string>>(_ =>
         {
             const string requiredConfiguration = "bootstrap.servers";
