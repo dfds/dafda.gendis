@@ -1,4 +1,4 @@
-version: "3.4"
+version: "3.8"
 
 services:
   database:
@@ -8,20 +8,15 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=p
-
-  db-migration:
-    build: ./db
-    depends_on:
-      - database
-    environment:
-      - LOCAL_DEVELOPMENT=1 # will try to CREATE DATABASE ${PGDATABASE}
-      - PGDATABASE=dafdagendis # database name
-      - PGHOST=database # same as above - docker-compose service name
-      - PGPORT=5432 # same as above
-      - PGUSER=postgres # same as above
-      - PGPASSWORD=p # same as above
-      - PGSSLMODE=disable # ignore SSLMODE for local development (overwritten - see ./db/Dockerfile)
-
+    volumes:
+      - ./db/migrations/add-outbox-table.sql:/docker-entrypoint-initdb.d/outbox_table.sql
+    healthcheck:
+      test: "pg_isready -h localhost -p 5432 -U postgres"
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.0
     environment:
@@ -37,19 +32,24 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092 
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: "cub kafka-ready -b localhost:9092 1 2"
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   kafka-setup:
     image: confluentinc/cp-kafka:7.0.0
     depends_on:
-      - kafka
-    command: "bash -c 'echo Waiting for Kafka to be ready... && \
-                      sleep 5 && \
-                      cub kafka-ready -b kafka:29092 1 20 && \
-                      kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic hello'"
+      kafka:
+        condition: service_healthy
+    command: "kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic hello"
     environment:
       KAFKA_BROKER_ID: ignored
       KAFKA_ZOOKEEPER_CONNECT: ignored
@@ -60,26 +60,35 @@ services:
       - 9090:9090
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    healthcheck:
+      test: "wget --spider -q http://localhost:9090"
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # grafana:
-  #   image: grafana/grafana
-  #   ports:
-  #     - 9091:3000
-  #   depends_on:
-  #     - prometheus
-  #   volumes:
-  #     - ./monitoring/grafana-datasource.yml:/etc/grafana/provisioning/datasources/source.yml
-
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 9091:3000
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    volumes:
+      - ./monitoring/grafana-datasource.yml:/etc/grafana/provisioning/datasources/source.yml
 
   # app:
   #   image: dafda.gendis
   #   ports:
   #     - 5225:5225
   #   depends_on:
-  #     - database
+  #     database:
+  #       condition: service_healthy
+  #     kafka-setup:
+  #       condition: service_completed_successfully
+
   #   environment:
-  #     - DB_CONNECTION_STRING=User ID=postgres;Password=p;Host=database;Port=5432;Database=dafdagendis;
+  #     - DB_CONNECTION_STRING=User ID=postgres;Password=p;Host=database;Port=5432;Database=postgres;
   #     - DAFDA_OUTBOX_NOTIFICATION_CHANNEL=dafda_outbox
   #     - GENDIS_PREFIX_FOR_KAFKA=GENDIS_KAFKA_
-  #     - GENDIS_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-  #     # - GENDIS_KAFKA_SSL_CA_LOCATION=""
+  #     - GENDIS_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
