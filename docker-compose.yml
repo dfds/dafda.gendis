@@ -61,11 +61,25 @@ services:
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
 
-  grafana:
-    image: grafana/grafana
-    ports:
-      - 9091:3000
-    depends_on:
-      - prometheus
-    volumes:
-      - ./monitoring/grafana-datasource.yml:/etc/grafana/provisioning/datasources/source.yml
+  # grafana:
+  #   image: grafana/grafana
+  #   ports:
+  #     - 9091:3000
+  #   depends_on:
+  #     - prometheus
+  #   volumes:
+  #     - ./monitoring/grafana-datasource.yml:/etc/grafana/provisioning/datasources/source.yml
+
+
+  # app:
+  #   image: dafda.gendis
+  #   ports:
+  #     - 5225:5225
+  #   depends_on:
+  #     - database
+  #   environment:
+  #     - DB_CONNECTION_STRING=User ID=postgres;Password=p;Host=database;Port=5432;Database=dafdagendis;
+  #     - DAFDA_OUTBOX_NOTIFICATION_CHANNEL=dafda_outbox
+  #     - GENDIS_PREFIX_FOR_KAFKA=GENDIS_KAFKA_
+  #     - GENDIS_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+  #     # - GENDIS_KAFKA_SSL_CA_LOCATION=""
