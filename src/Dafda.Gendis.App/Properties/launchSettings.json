@@ -6,7 +6,7 @@
       "applicationUrl": "http://localhost:5225",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DB_CONNECTION_STRING": "User ID=postgres;Password=p;Host=localhost;Port=5432;Database=dafdagendis;",
+        "DB_CONNECTION_STRING": "User ID=postgres;Password=p;Host=localhost;Port=5432;Database=postgres;",
         "GENDIS_PREFIX_FOR_KAFKA": "DEFAULT_KAFKA_",
         "DAFDA_OUTBOX_NOTIFICATION_CHANNEL": "dafda_outbox",
         "DEFAULT_KAFKA_BOOTSTRAP_SERVERS": "localhost:9092"
