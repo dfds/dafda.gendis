@@ -21,16 +21,14 @@ public static class Serilog
                 .MinimumLevel.Override("Microsoft.Extensions.Diagnostics.HealthChecks", LogEventLevel.Warning)
                 ;
 
-            configuration.WriteTo.Console(theme: AnsiConsoleTheme.Code);
-
-            //if (context.HostingEnvironment.IsProduction())
-            //{
-            //    configuration.WriteTo.Console(new CompactJsonFormatter());
-            //}
-            //else
-            //{
-            //    configuration.WriteTo.Console(theme: AnsiConsoleTheme.Code);
-            //}
+            if (context.HostingEnvironment.IsProduction())
+            {
+                configuration.WriteTo.Console(new CompactJsonFormatter());
+            }
+            else
+            {
+                configuration.WriteTo.Console(theme: AnsiConsoleTheme.Code);
+            }
         });
     }
 }
