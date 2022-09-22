@@ -3,7 +3,7 @@ APP_PROJECT=Dafda.Gendis.App/Dafda.Gendis.App.csproj
 OUTPUT_DIR=${PWD}/.output
 OUTPUT_DIR_APP=$(OUTPUT_DIR)/app
 OUTPUT_DIR_TESTRESULTS=$(OUTPUT_DIR)/testresults
-APP_IMAGE_NAME=dafda.gendis
+APP_IMAGE_NAME=dafda-gendis
 
 init: clean restore build unittests
 
@@ -69,4 +69,4 @@ runascontainer:
     	-e GENDIS_KAFKA_BOOTSTRAP_SERVERS="host.docker.internal:9092" \
     	-e GENDIS_KAFKA_SSL_CA_LOCATION="" \
     	--network=host \
-    	dafda.gendis
+    	dafda-gendis

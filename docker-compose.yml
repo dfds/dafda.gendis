@@ -78,7 +78,7 @@ services:
       - ./monitoring/grafana-datasource.yml:/etc/grafana/provisioning/datasources/source.yml
 
   # app:
-  #   image: dafda.gendis
+  #   image: dafda-gendis
   #   ports:
   #     - 5225:5225
   #   depends_on:
